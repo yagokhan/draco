@@ -48,10 +48,19 @@ def simulate_batch(data: dict, params: torch.Tensor) -> BatchResult:
     win_rate = wins / n_trades.clamp(min=1)
     avg_pnl = adj_pnl_pct.sum(dim=1) / n_trades.clamp(min=1)
 
-    # Robust Sniper Score: Balance WR, AvgPnL, and Volume
-    # Penalty if n_trades < 50 to ensure statistical significance
-    score = (win_rate * 150.0) + (avg_pnl * 10.0)
-    score = torch.where(n_trades >= 50, score, score - 10000.0)
+    # DRACO V5: Institutional Scorer
+    # Goal: Avg PnL > 6.0% AND Managed Volume (~10-15 trades/day total)
+    # Training window is ~540 days. 10 trades/day = ~5,400 trades total.
+    # We aim for ~1,800 trades per tier in the training split.
+    pnl_penalty = torch.where(avg_pnl >= 6.0, 0.0, (6.0 - avg_pnl) * 1000.0)
+    
+    target_n = 1800.0
+    # Quadratic penalty for volume deviation from institutional target
+    vol_penalty = torch.pow(n_trades - target_n, 2) / 1000.0
+    
+    # Score = WinRate - Penalties
+    score = (win_rate * 200.0) - pnl_penalty - vol_penalty
+    score = torch.where(n_trades >= 500, score, score - 50000.0) # Ensure enough data
 
     return BatchResult(net_pnl, win_rate, n_trades, score, avg_pnl)
 

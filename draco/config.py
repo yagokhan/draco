@@ -1,5 +1,5 @@
 """
-Project DRACO — 50-Asset Robust Sniper Engine (KRYPTONITE EDITION).
+Project DRACO — 50-Asset Institutional Engine (KRYPTONITE V5).
 """
 from __future__ import annotations
 import torch
@@ -39,11 +39,11 @@ BLIND_END   = "2026-03-29"
 ROUND_TRIP_COST = 0.0012
 INITIAL_CAPITAL = 15_000.0
 
-# Aggressive but Precision-Focused
+# Institutional Calibration
 POS_FRAC_BASE    = 0.12
-CONF_WEIGHT_POW  = 3.0
-PTP_TARGET_PCT   = 1.50
-PTP_EXIT_FRAC    = 0.5
+CONF_WEIGHT_POW  = 3.0    # Strict weight
+PTP_TARGET_PCT   = 2.50   # 2.5% Target
+PTP_EXIT_FRAC    = 0.5    # 50% Exit
 
 @dataclass
 class TierSearchSpace:
@@ -53,36 +53,36 @@ class TierSearchSpace:
     midline_buf:  tuple
     stddev_mult:  tuple
     hard_sl:      tuple
-    activation:   tuple = (0.004, 0.010, 0.001)
+    activation:   tuple = (0.005, 0.012, 0.002)
 
-# TITAN: Robust Search
+# TITAN: High-Confidence Institutional Search
 TITAN_SPACE = TierSearchSpace(
     name="TITAN",
-    conf_min=(0.650, 0.950, 0.050),
-    pvt_r_min=(0.600, 0.900, 0.050),
+    conf_min=(0.600, 0.950, 0.020),
+    pvt_r_min=(0.550, 0.900, 0.020),
     midline_buf=(0.05, 0.35, 0.05),
     stddev_mult=(0.5, 1.5, 0.2),
-    hard_sl=(0.003, 0.008, 0.001)
+    hard_sl=(0.004, 0.008, 0.001)
 )
 
 # NAVIGATOR
 NAVIGATOR_SPACE = TierSearchSpace(
     name="NAVIGATOR",
-    conf_min=(0.600, 0.900, 0.050),
-    pvt_r_min=(0.550, 0.850, 0.050),
+    conf_min=(0.550, 0.900, 0.020),
+    pvt_r_min=(0.500, 0.850, 0.020),
     midline_buf=(0.10, 0.40, 0.05),
-    stddev_mult=(0.8, 2.2, 0.2),
-    hard_sl=(0.006, 0.018, 0.002)
+    stddev_mult=(1.0, 2.5, 0.2),
+    hard_sl=(0.008, 0.018, 0.002)
 )
 
 # VOLT
 VOLT_SPACE = TierSearchSpace(
     name="VOLT",
-    conf_min=(0.550, 0.850, 0.050),
-    pvt_r_min=(0.500, 0.800, 0.050),
-    midline_buf=(0.20, 0.60, 0.10),
-    stddev_mult=(1.5, 4.0, 0.5),
-    hard_sl=(0.010, 0.040, 0.005)
+    conf_min=(0.500, 0.850, 0.020),
+    pvt_r_min=(0.450, 0.800, 0.020),
+    midline_buf=(0.20, 0.70, 0.10),
+    stddev_mult=(2.0, 5.0, 0.5),
+    hard_sl=(0.015, 0.045, 0.005)
 )
 
 GPU_BATCH_SIZE = 4096

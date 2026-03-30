@@ -1,14 +1,16 @@
 """
-Project DRACO — Ultra-Aggressive Tiered Optimizer.
+Project DRACO — 5-Fold Cross-Validated GPU Optimizer.
 """
 from __future__ import annotations
 import torch
 import time
 import json
+import numpy as np
 from pathlib import Path
 from config import (
     DEVICE, DTYPE, GPU_BATCH_SIZE, RESULTS_DIR,
-    TITAN_SPACE, NAVIGATOR_SPACE, VOLT_SPACE
+    TITAN_SPACE, NAVIGATOR_SPACE, VOLT_SPACE,
+    TRAIN_START, TRAIN_END
 )
 from trade_manager import simulate_batch, extract_top_k, BatchResult
 from signal_auditor import load_trade_universe
@@ -30,44 +32,72 @@ def run_tier_optimization():
     best_configs = {}
 
     for space in [TITAN_SPACE, NAVIGATOR_SPACE, VOLT_SPACE]:
-        print(f"\n[Ultra-Aggressive] Optimizing Tier: {space.name}")
+        print(f"\n[V6-CV] Optimizing Tier: {space.name}")
         tier_id = {"TITAN": 0, "NAVIGATOR": 1, "VOLT": 2}[space.name]
         
+        # 1. Prepare 5 Folds from the Training Data
         train_full = data_splits["train"]
         mask = (train_full["tier_id"] == tier_id)
         train_tier = {k: v[mask] if isinstance(v, torch.Tensor) and v.shape[0] > 0 else v for k, v in train_full.items()}
-        train_tier["n"] = mask.sum().item()
+        n_total = mask.sum().item()
         
-        if train_tier["n"] == 0:
-            print(f"  No trades for {space.name}")
+        if n_total < 500:
+            print(f"  Insufficient trades for {space.name}")
             continue
 
         params = build_grid(space)
-        N = params.shape[0]
-        print(f"  Grid Size: {N:,} trials")
-        all_results = []
+        N_grid = params.shape[0]
+        print(f"  Grid Size: {N_grid:,} trials | Total Trades: {n_total}")
         
-        for i in range(0, N, GPU_BATCH_SIZE):
-            batch = params[i:i+GPU_BATCH_SIZE]
-            all_results.append(simulate_batch(train_tier, batch))
-            if (i // GPU_BATCH_SIZE) % 100 == 0:
-                print(f"    Progress: {i/N:.1%} complete")
-            
-        merged = BatchResult(
-            net_pnl=torch.cat([r.net_pnl for r in all_results]),
-            win_rate=torch.cat([r.win_rate for r in all_results]),
-            n_trades=torch.cat([r.n_trades for r in all_results]),
-            score=torch.cat([r.score for r in all_results]),
-            avg_pnl=torch.cat([r.avg_pnl for r in all_results]),
-        )
-        
-        best = extract_top_k(merged, params, k=1)[0]
-        best_configs[space.name] = best
-        print(f"  Best {space.name}: WR={best['win_rate']:.1%} | PnL=${best['net_pnl']:,.0f} | SL={best['hard_sl']:.1%}")
+        # Create Fold Indices
+        fold_size = n_total // 5
+        fold_results = [] # Will store BatchResults for each fold
 
-    # Final Validation
+        for f_idx in range(5):
+            f_start, f_end = f_idx * fold_size, (f_idx + 1) * fold_size
+            fold_data = {k: v[f_start:f_end] if isinstance(v, torch.Tensor) and v.shape[0] > 0 else v for k, v in train_tier.items()}
+            fold_data["n"] = f_end - f_start
+            
+            fold_batch_pnl = []
+            fold_batch_score = []
+            
+            for i in range(0, N_grid, GPU_BATCH_SIZE):
+                batch = params[i:i+GPU_BATCH_SIZE]
+                res = simulate_batch(fold_data, batch)
+                fold_batch_pnl.append(res.net_pnl)
+                fold_batch_score.append(res.score)
+            
+            fold_results.append({
+                "pnl": torch.cat(fold_batch_pnl),
+                "score": torch.cat(fold_batch_score)
+            })
+            print(f"    Fold {f_idx+1} processed.")
+
+        # 2. Find the configuration with the highest MEAN SCORE across all 5 folds
+        all_scores = torch.stack([f["score"] for f in fold_results], dim=0) # [5, N_grid]
+        mean_scores = all_scores.mean(dim=0)
+        
+        # We also calculate variance to penalize unstable parameters
+        std_scores = all_scores.std(dim=0)
+        cv_score = mean_scores - (std_scores * 0.5) # Penalty for inconsistency
+        
+        best_idx = torch.argmax(cv_score).item()
+        p = params[best_idx]
+        
+        best_configs[space.name] = {
+            "conf_min": p[0].item(),
+            "pvt_r_min": p[1].item(),
+            "midline_buffer": p[2].item(),
+            "stddev_mult": p[3].item(),
+            "trail_activation": p[4].item(),
+            "hard_sl": p[5].item(),
+            "cv_mean_score": mean_scores[best_idx].item()
+        }
+        print(f"  Best {space.name} (CV Optimized): Conf={p[0].item():.3f} | SL={p[5].item():.1%}")
+
+    # 3. Final Validation on Blind Test
     print("\n" + "="*80)
-    print("  ULTRA-AGGRESSIVE MULTI-TIER PERFORMANCE (Blind Test)")
+    print("  DRACO V6 CROSS-VALIDATED PERFORMANCE (Blind Test)")
     print("="*80)
     
     blind_full = data_splits["blind"]
