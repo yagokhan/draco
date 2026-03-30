@@ -1,0 +1,6 @@
+2026-03-29 22:50:28,206 | INFO  | DRACO FETCH START: 50 assets
+2026-03-29 22:50:28,206 | INFO  |     Fetching batch for BTCUSDT 5m (cursor: 1704067200000)
+2026-03-29 22:50:28,915 | INFO  |     Fetching batch for BTCUSDT 5m (cursor: 1704367200000)
+2026-03-29 22:50:29,562 | INFO  |     Fetching batch for BTCUSDT 5m (cursor: 1704667200000)
+2026-03-29 22:50:30,205 | INFO  |     Fetching batch for BTCUSDT 5m (cursor: 1704967200000)
+2026-03-29 22:50:30,834 | INFO  |     Fetching batch for BTCUSDT 5m (cursor: 1705267200000)

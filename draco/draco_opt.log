@@ -1,0 +1,24 @@
+
+[Ultra-Aggressive] Optimizing Tier: TITAN
+  Grid Size: 71,280 trials
+    Progress: 0.0% complete
+  Best TITAN: WR=54.0% | PnL=$3,562,732 | SL=0.4%
+
+[Ultra-Aggressive] Optimizing Tier: NAVIGATOR
+  Grid Size: 266,112 trials
+    Progress: 0.0% complete
+  Best NAVIGATOR: WR=52.9% | PnL=$9,035,088 | SL=0.8%
+
+[Ultra-Aggressive] Optimizing Tier: VOLT
+  Grid Size: 388,080 trials
+    Progress: 0.0% complete
+  Best VOLT: WR=53.0% | PnL=$10,854,466 | SL=1.2%
+
+================================================================================
+  ULTRA-AGGRESSIVE MULTI-TIER PERFORMANCE (Blind Test)
+================================================================================
+  TITAN     : WR=49.6% | Trades=2478 | PnL=$ 794,003
+  NAVIGATOR : WR=49.5% | Trades=4010 | PnL=$1,786,703
+  VOLT      : WR=48.7% | Trades=4552 | PnL=$1,830,616
+--------------------------------------------------------------------------------
+  OVERALL:   WR=49.2% | Trades=11040 | PnL=$4,411,321.69
