@@ -6,7 +6,7 @@
     "stddev_mult": 0.5,
     "trail_activation": 0.004999999888241291,
     "hard_sl": 0.004000000189989805,
-    "cv_mean_score": -52320.4765625
+    "cv_mean_score": -52795.23828125
   },
   "NAVIGATOR": {
     "conf_min": 0.550000011920929,
@@ -15,7 +15,7 @@
     "stddev_mult": 1.0,
     "trail_activation": 0.004999999888241291,
     "hard_sl": 0.00800000037997961,
-    "cv_mean_score": -1010.5363159179688
+    "cv_mean_score": -51943.6875
   },
   "VOLT": {
     "conf_min": 0.5,
@@ -24,6 +24,6 @@
     "stddev_mult": 2.0,
     "trail_activation": 0.004999999888241291,
     "hard_sl": 0.014999999664723873,
-    "cv_mean_score": -46.32232666015625
+    "cv_mean_score": -436.91748046875
   }
 }

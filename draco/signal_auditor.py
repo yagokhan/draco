@@ -7,7 +7,7 @@ import pandas as pd
 from config import (
     DEVICE, DTYPE, DRACO_CSV, ASSET_TO_TIER, TF_ENCODE,
     TRAIN_START, TRAIN_END, VAL_START, VAL_END, BLIND_START,
-    ROUND_TRIP_COST, PTP_TARGET_PCT, PTP_EXIT_FRAC
+    ROUND_TRIP_COST, PTP_TARGET_PCT, PTP_EXIT_FRAC, LATENCY_PENALTY
 )
 
 def load_trade_universe() -> dict:
@@ -73,5 +73,6 @@ def apply_exit_strategy(data: dict, params: torch.Tensor, entry_mask: torch.Tens
     
     final_raw_hybrid = torch.where(ptp_triggered, ptp_pnl, final_raw)
     
-    raw_adjusted = (final_raw_hybrid - ROUND_TRIP_COST) * hist_lev * 100.0
+    # Subtract Slippage/Latency and Commission
+    raw_adjusted = (final_raw_hybrid - ROUND_TRIP_COST - LATENCY_PENALTY) * hist_lev * 100.0
     return raw_adjusted * entry_mask.float()

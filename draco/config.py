@@ -36,8 +36,10 @@ VAL_END     = "2025-10-31"
 BLIND_START = "2025-11-01"
 BLIND_END   = "2026-03-29"
 
-ROUND_TRIP_COST = 0.0012
-INITIAL_CAPITAL = 15_000.0
+# Real-World Institutional Friction
+ROUND_TRIP_COST = 0.0045 # 0.12% fees + 0.33% slippage/spread
+INITIAL_CAPITAL = 1000.0
+LATENCY_PENALTY = 0.0015 # 0.15% worse entry/exit prices
 
 # Institutional Calibration
 POS_FRAC_BASE    = 0.12

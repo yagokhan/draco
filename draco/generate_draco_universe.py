@@ -1,5 +1,5 @@
 """
-draco/generate_draco_universe.py — Robust High-Volume Synthesis for 50-Asset DRACO.
+draco/generate_draco_universe.py — Audit-Ready Synthesis for 50-Asset DRACO.
 """
 from __future__ import annotations
 import pandas as pd
@@ -23,8 +23,12 @@ ASSETS = [
     "MKRUSDT", "LDOUSDT", "UNIUSDT", "DYDXUSDT", "CRVUSDT", "IMXUSDT", "PYTHUSDT", "JUPUSDT", "ENAUSDT", "WUSDT"
 ]
 
+def _compute_rolling_r(y: pd.Series, period: int):
+    x = pd.Series(np.arange(period), index=y.index[:period])
+    return y.rolling(window=period).corr(pd.Series(np.arange(len(y)), index=y.index))
+
 def generate():
-    logger.info(f"Generating FINAL ROBUST DRACO universe...")
+    logger.info(f"Generating AUDIT-READY DRACO universe...")
     all_signals = []
     
     for symbol in ASSETS:
@@ -50,19 +54,15 @@ def generate():
         df["mom"] = c.pct_change(12)
         
         # 2. Key Regression Filter
-        # Confidence Raw: Price R
         df["confidence_raw"] = np.log(c).rolling(48).corr(pd.Series(np.arange(len(c)), index=c.index)).abs()
-        
-        # PVT R: Price-Volume Correlation (High Alpha Signal)
         df["pvt_r_val"] = np.log(c).rolling(48).corr(np.log(v)).abs()
         
-        # 3. Target
-        df["pnl_pct"] = (c.shift(-12) / c - 1.0) * 100.0
+        # 3. Prices and Target
+        df["entry_price"] = c
+        df["exit_price"] = c.shift(-12)
+        df["pnl_pct"] = (df["exit_price"] / df["entry_price"] - 1.0) * 100.0
         
-        # Clean and Clip
         df = df.replace([np.inf, -np.inf], 0).fillna(0)
-        
-        # Sample every 4th bar
         df_sample = df.iloc[::4].copy()
         
         signals = pd.DataFrame({
@@ -73,6 +73,8 @@ def generate():
             "rsi": np.clip(df_sample["rsi"], 0, 100),
             "ema_dist": np.clip((df_sample["close"] / df_sample["ema_20"] - 1.0), -0.5, 0.5),
             "mom": np.clip(df_sample["mom"], -0.5, 0.5),
+            "buy_price": df_sample["entry_price"],
+            "sell_price": df_sample["exit_price"],
             "best_tf": "1h",
             "best_period": 48,
             "pnl_pct": df_sample["pnl_pct"],
@@ -87,7 +89,7 @@ def generate():
     if all_signals:
         master_df = pd.concat(all_signals, ignore_index=True)
         master_df.to_csv(DRACO_CSV, index=False)
-        logger.info(f"DRACO FINAL UNIVERSE READY: {len(master_df)} signals")
+        logger.info(f"DRACO AUDIT UNIVERSE READY: {len(master_df)} signals")
 
 if __name__ == "__main__":
     generate()
